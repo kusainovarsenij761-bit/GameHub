@@ -1,0 +1,37 @@
+name: Build GameHub APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate Android project
+        run: |
+          flutter create --platforms=android --org com.example --project-name gamehub .
+          mkdir -p lib android/app/src/main/kotlin/com/example/gamehub
+          cp main.dart lib/main.dart
+          cp game_mode.dart lib/game_mode.dart
+          cp AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          cp MainActivity.kt android/app/src/main/kotlin/com/example/gamehub/MainActivity.kt
+      - name: Get dependencies
+        run: flutter pub get
+      - name: Build release APK
+        run: flutter build apk --release
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: gamehub-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
